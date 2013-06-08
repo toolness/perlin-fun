@@ -2,63 +2,8 @@
 <meta charset="utf-8">
 <title>One Dimensional Perlin Fun</title>
 <script src="mt.js"></script>
+<script src="perlin.js"></script>
 <script>
-function cosineInterpolate(y1, y2, percent) {
-  percent = (Math.cos(Math.PI - (percent * Math.PI)) + 1) * 0.5;
-  return linearInterpolate(y1, y2, percent);
-};
-
-function linearInterpolate(y1, y2, percent) {
-  return y1 * (1 - percent) + y2 * (percent);
-};
-
-function Noise(prng, amplitude, wavelength, waves, interpolate) {
-  var self = {};
-  var points = [];
-
-  for (var i = 0; i < waves; i++)
-    points.push({
-      x: i * wavelength,
-      y: prng.random() * amplitude
-    });
-
-  self.at = function(x) {
-    var i = Math.floor(x / wavelength);
-    var leftPoint = points[i];
-    var rightPoint = points[i+1];
-    var y = interpolate(leftPoint.y, rightPoint.y,
-                        (x % wavelength) / wavelength);
-    return y;
-  };
-
-  return self;
-}
-
-function PerlinNoise(seed, width, wavelength, persistence, octaves) {
-  var self = {};
-  var noises = [];
-  var totalOctaveAmplitudes = 0;
-
-  for (var i = 0; i < octaves; i++) {
-    var prng = new MersenneTwister(seed + i);
-    var octaveAmplitude = Math.pow(persistence, i);
-    var noise = Noise(prng, octaveAmplitude,
-                      wavelength, (width/wavelength)+1, cosineInterpolate);
-    noises.push(noise);
-    totalOctaveAmplitudes += octaveAmplitude;
-    wavelength = wavelength / 2;
-  }
-
-  self.at = function(x) {
-    var unnormalizedY = noises.reduce(function(sum, noise, i) {
-      return sum + noise.at(x);
-    }, 0);
-    return unnormalizedY * (1 / totalOctaveAmplitudes);
-  };
-
-  return self;
-}
-
 onload = function() {
   var WIDTH = 640;
   var HEIGHT = 400;
@@ -79,7 +24,14 @@ onload = function() {
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   ctx.beginPath();
 
-  var perlin = PerlinNoise(SEED, WIDTH, WAVELENGTH, PERSISTENCE, OCTAVES);
+  var perlin = Perlin.LayeredNoise({
+    seed: SEED,
+    width: WIDTH,
+    wavelength: WAVELENGTH,
+    persistence: PERSISTENCE,
+    octaves: OCTAVES,
+    noise: Perlin.Noise1D
+  });
 
   ctx.moveTo(0, HEIGHT-perlin.at(0) * VSCALE);
   for (var x = 1; x < WIDTH; x++)

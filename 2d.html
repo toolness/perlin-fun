@@ -2,78 +2,8 @@
 <meta charset="utf-8">
 <title>Two Dimensional Perlin Fun</title>
 <script src="mt.js"></script>
+<script src="perlin.js"></script>
 <script>
-function cosineInterpolate(y1, y2, percent) {
-  percent = (Math.cos(Math.PI - (percent * Math.PI)) + 1) * 0.5;
-  return linearInterpolate(y1, y2, percent);
-};
-
-function linearInterpolate(y1, y2, percent) {
-  return y1 * (1 - percent) + y2 * (percent);
-};
-
-function Noise(prng, amplitude, wavelength, waves, interpolate) {
-  var self = {};
-  var rows = [];
-
-  for (var j = 0; j < waves; j++) {
-    var row = [];
-    for (var i = 0; i < waves; i++) {
-      row.push({
-        x: i * wavelength,
-        y: j * wavelength,
-        z: prng.random() * amplitude
-      });
-    }
-    rows.push(row);
-  }
-
-  self.at = function(x, y) {
-    var i = Math.floor(x / wavelength);
-    var j = Math.floor(y / wavelength);
-    var topLeftPoint = rows[j+1][i];
-    var topRightPoint = rows[j+1][i+1];
-    var bottomLeftPoint = rows[j][i];
-    var bottomRightPoint = rows[j][i+1];
-
-    var leftZ = interpolate(bottomLeftPoint.z, topLeftPoint.z,
-                            (y % wavelength) / wavelength);
-    var rightZ = interpolate(bottomRightPoint.z, topRightPoint.z,
-                             (y % wavelength) / wavelength);
-    
-    var z = interpolate(leftZ, rightZ,
-                        (x % wavelength) / wavelength);
-    return z;
-  };
-
-  return self;
-}
-
-function PerlinNoise(seed, width, wavelength, persistence, octaves) {
-  var self = {};
-  var noises = [];
-  var totalOctaveAmplitudes = 0;
-
-  for (var i = 0; i < octaves; i++) {
-    var prng = new MersenneTwister(seed + i);
-    var octaveAmplitude = Math.pow(persistence, i);
-    var noise = Noise(prng, octaveAmplitude,
-                      wavelength, (width/wavelength)+1, cosineInterpolate);
-    noises.push(noise);
-    totalOctaveAmplitudes += octaveAmplitude;
-    wavelength = wavelength / 2;
-  }
-
-  self.at = function(x, y) {
-    var unnormalizedZ = noises.reduce(function(sum, noise) {
-      return sum + noise.at(x, y);
-    }, 0);
-    return unnormalizedZ * (1 / totalOctaveAmplitudes);
-  };
-
-  return self;
-}
-
 onload = function() {
   var WIDTH = 200;
   var HEIGHT = WIDTH;
@@ -93,7 +23,14 @@ onload = function() {
   ctx.strokeStyle = "black";
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  var perlin = PerlinNoise(SEED, WIDTH, WAVELENGTH, PERSISTENCE, OCTAVES);
+  var perlin = Perlin.LayeredNoise({
+    seed: SEED,
+    width: WIDTH,
+    wavelength: WAVELENGTH,
+    persistence: PERSISTENCE,
+    octaves: OCTAVES,
+    noise: Perlin.Noise2D
+  });
 
   for (var y = 1; y < HEIGHT; y++) {
     for (var x = 1; x < WIDTH; x++) {
