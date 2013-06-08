@@ -48,6 +48,12 @@ canvas {
 
     <label for="persistence">Persistence</label>
     <input type="number" id="persistence" value="0.5">
+
+    <label for="interpolation">Interpolation</label>
+    <select id="interpolation">
+      <option value="linearInterpolate">Linear</option>
+      <option value="cosineInterpolate" selected>Cosine</option>
+    </select>
   </fieldset>
 </form>
 <script src="vendor/mersenne-twister.js"></script>
@@ -77,6 +83,7 @@ var renderers = {
       wavelength: WAVELENGTH,
       persistence: options.persistence,
       octaves: options.octaves,
+      interpolate: options.interpolate,
       noise: Perlin.Noise1D
     });
 
@@ -110,6 +117,7 @@ var renderers = {
       wavelength: WAVELENGTH,
       persistence: options.persistence,
       octaves: options.octaves,
+      interpolate: options.interpolate,
       noise: Perlin.Noise2D
     });
 
@@ -136,7 +144,8 @@ onload = function() {
     canvas = renderer({
       seed: parseInt($("#seed").value),
       persistence: parseFloat($("#persistence").value),
-      octaves: parseInt($("#octaves").value)
+      octaves: parseInt($("#octaves").value),
+      interpolate: Perlin[$("#interpolation").value]
     });
     document.body.appendChild(canvas);
   };
