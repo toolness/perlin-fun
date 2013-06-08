@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Perlin Fun</title>
+<script src="mt.js"></script>
+<script>
+function linearInterpolate(y1, y2, percent) {
+  return y1 * (1 - percent) + y2 * (percent);
+};
+
+function Noise(prng, amplitude, wavelength, waves, interpolate) {
+  var self = {};
+  var points = [];
+  var x = 0;
+  var y;
+
+  for (var i = 0; i < waves; i++)
+    points.push({
+      x: i * wavelength,
+      y: prng.random() * amplitude
+    });
+
+  self.at = function(x) {
+    var i = Math.floor(x / wavelength);
+    var leftPoint = points[i];
+    var rightPoint = points[i+1];
+    var y = interpolate(leftPoint.y, rightPoint.y,
+                        (x % wavelength) / wavelength);
+    return y;
+  };
+
+  return self;
+}
+
+onload = function() {
+  var WIDTH = 640;
+  var HEIGHT = 200;
+  var SEED = 12199;
+  var PERSISTENCE = 0.5;
+  var OCTAVES = 6;
+  var INITIAL_WAVELENGTH = WIDTH / 5;
+  var VSCALE = HEIGHT / 2;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+
+  var ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = "#f0f0f0";
+  ctx.strokeStyle = "black";
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  ctx.beginPath();
+
+  var noises = [];
+  var wavelength = INITIAL_WAVELENGTH;
+  var noisesAt = function(x) {
+    return noises.reduce(function(sum, noise) {
+      return sum + noise.at(x);
+    }, 0);
+  };
+  for (var i = 0; i < OCTAVES; i++) {
+    var prng = new MersenneTwister(SEED + i);
+    var noise = Noise(prng, Math.pow(PERSISTENCE, i) * VSCALE,
+                      wavelength, (WIDTH/wavelength)+1, linearInterpolate);
+    noises.push(noise);
+    wavelength = wavelength / 2;
+  }
+
+  ctx.moveTo(0, HEIGHT-noisesAt(0));
+  for (var x = 1; x < WIDTH; x++)
+    ctx.lineTo(x, HEIGHT-noisesAt(x));
+
+  ctx.stroke();
+
+  document.body.appendChild(canvas);
+};
+</script>
