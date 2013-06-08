@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Two Dimensional Perlin Fun</title>
+<script src="mt.js"></script>
+<script>
+function cosineInterpolate(y1, y2, percent) {
+  percent = (Math.cos(Math.PI - (percent * Math.PI)) + 1) * 0.5;
+  return linearInterpolate(y1, y2, percent);
+};
+
+function linearInterpolate(y1, y2, percent) {
+  return y1 * (1 - percent) + y2 * (percent);
+};
+
+function Noise(prng, amplitude, wavelength, waves, interpolate) {
+  var self = {};
+  var rows = [];
+
+  for (var j = 0; j < waves; j++) {
+    var row = [];
+    for (var i = 0; i < waves; i++) {
+      row.push({
+        x: i * wavelength,
+        y: j * wavelength,
+        z: prng.random() * amplitude
+      });
+    }
+    rows.push(row);
+  }
+
+  self.at = function(x, y) {
+    var i = Math.floor(x / wavelength);
+    var j = Math.floor(y / wavelength);
+    var topLeftPoint = rows[j+1][i];
+    var topRightPoint = rows[j+1][i+1];
+    var bottomLeftPoint = rows[j][i];
+    var bottomRightPoint = rows[j][i+1];
+
+    var leftZ = interpolate(bottomLeftPoint.z, topLeftPoint.z,
+                            (y % wavelength) / wavelength);
+    var rightZ = interpolate(bottomRightPoint.z, topRightPoint.z,
+                             (y % wavelength) / wavelength);
+    
+    var z = interpolate(leftZ, rightZ,
+                        (x % wavelength) / wavelength);
+    return z;
+  };
+
+  return self;
+}
+
+onload = function() {
+  var WIDTH = 200;
+  var HEIGHT = WIDTH;
+  var SEED = 12194;
+  var PERSISTENCE = 0.5;
+  var OCTAVES = 4;
+  var WAVELENGTH = WIDTH / 5;
+  var ZSCALE = 255;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+
+  var ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = "#f0f0f0";
+  ctx.strokeStyle = "black";
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  var prng = new MersenneTwister(SEED);
+  var noise = Noise(prng, 1.0, WAVELENGTH, (WIDTH/WAVELENGTH) + 1,
+                    cosineInterpolate);
+
+  for (var y = 1; y < HEIGHT; y++) {
+    for (var x = 1; x < WIDTH; x++) {
+      var z = Math.floor(noise.at(x, y) * ZSCALE);
+      ctx.fillStyle = "rgb(" + [z, z, z].join(', ') + ")";
+      ctx.fillRect(x-1, HEIGHT-y-1, 1, 1);
+    }
+  }
+
+  document.body.appendChild(canvas);
+};
+</script>
