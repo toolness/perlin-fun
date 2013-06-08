@@ -37,19 +37,23 @@ function Noise(prng, amplitude, wavelength, waves, interpolate) {
 function PerlinNoise(seed, width, wavelength, persistence, octaves) {
   var self = {};
   var noises = [];
+  var totalOctaveAmplitudes = 0;
 
   for (var i = 0; i < octaves; i++) {
     var prng = new MersenneTwister(seed + i);
-    var noise = Noise(prng, Math.pow(persistence, i),
+    var octaveAmplitude = Math.pow(persistence, i);
+    var noise = Noise(prng, octaveAmplitude,
                       wavelength, (width/wavelength)+1, cosineInterpolate);
     noises.push(noise);
+    totalOctaveAmplitudes += octaveAmplitude;
     wavelength = wavelength / 2;
   }
 
   self.at = function(x) {
-    return noises.reduce(function(sum, noise) {
+    var unnormalizedY = noises.reduce(function(sum, noise, i) {
       return sum + noise.at(x);
     }, 0);
+    return unnormalizedY * (1 / totalOctaveAmplitudes);
   };
 
   return self;
@@ -62,7 +66,7 @@ onload = function() {
   var PERSISTENCE = 0.5;
   var OCTAVES = 4;
   var WAVELENGTH = WIDTH / 5;
-  var VSCALE = 200;
+  var VSCALE = HEIGHT;
 
   var canvas = document.createElement('canvas');
   canvas.width = WIDTH;
