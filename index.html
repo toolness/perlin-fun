@@ -3,6 +3,11 @@
 <title>Perlin Fun</title>
 <script src="mt.js"></script>
 <script>
+function cosineInterpolate(y1, y2, percent) {
+  percent = (Math.cos(Math.PI - (percent * Math.PI)) + 1) * 0.5;
+  return linearInterpolate(y1, y2, percent);
+};
+
 function linearInterpolate(y1, y2, percent) {
   return y1 * (1 - percent) + y2 * (percent);
 };
@@ -38,7 +43,7 @@ function PerlinNoise(seed, width, wavelength, persistence, octaves) {
   for (var i = 0; i < octaves; i++) {
     var prng = new MersenneTwister(seed + i);
     var noise = Noise(prng, Math.pow(persistence, i),
-                      wavelength, (width/wavelength)+1, linearInterpolate);
+                      wavelength, (width/wavelength)+1, cosineInterpolate);
     noises.push(noise);
     wavelength = wavelength / 2;
   }
@@ -54,12 +59,12 @@ function PerlinNoise(seed, width, wavelength, persistence, octaves) {
 
 onload = function() {
   var WIDTH = 640;
-  var HEIGHT = 200;
-  var SEED = 12199;
+  var HEIGHT = 400;
+  var SEED = 12194;
   var PERSISTENCE = 0.5;
-  var OCTAVES = 6;
+  var OCTAVES = 4;
   var WAVELENGTH = WIDTH / 5;
-  var VSCALE = HEIGHT / 2;
+  var VSCALE = 200;
 
   var canvas = document.createElement('canvas');
   canvas.width = WIDTH;
