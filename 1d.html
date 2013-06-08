@@ -15,8 +15,6 @@ function linearInterpolate(y1, y2, percent) {
 function Noise(prng, amplitude, wavelength, waves, interpolate) {
   var self = {};
   var points = [];
-  var x = 0;
-  var y;
 
   for (var i = 0; i < waves; i++)
     points.push({
