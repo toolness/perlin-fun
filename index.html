@@ -31,13 +31,34 @@ function Noise(prng, amplitude, wavelength, waves, interpolate) {
   return self;
 }
 
+function PerlinNoise(seed, width, wavelength, persistence, octaves) {
+  var self = {};
+  var noises = [];
+
+  for (var i = 0; i < octaves; i++) {
+    var prng = new MersenneTwister(seed + i);
+    var noise = Noise(prng, Math.pow(persistence, i),
+                      wavelength, (width/wavelength)+1, linearInterpolate);
+    noises.push(noise);
+    wavelength = wavelength / 2;
+  }
+
+  self.at = function(x) {
+    return noises.reduce(function(sum, noise) {
+      return sum + noise.at(x);
+    }, 0);
+  };
+
+  return self;
+}
+
 onload = function() {
   var WIDTH = 640;
   var HEIGHT = 200;
   var SEED = 12199;
   var PERSISTENCE = 0.5;
   var OCTAVES = 6;
-  var INITIAL_WAVELENGTH = WIDTH / 5;
+  var WAVELENGTH = WIDTH / 5;
   var VSCALE = HEIGHT / 2;
 
   var canvas = document.createElement('canvas');
@@ -51,24 +72,11 @@ onload = function() {
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   ctx.beginPath();
 
-  var noises = [];
-  var wavelength = INITIAL_WAVELENGTH;
-  var noisesAt = function(x) {
-    return noises.reduce(function(sum, noise) {
-      return sum + noise.at(x);
-    }, 0);
-  };
-  for (var i = 0; i < OCTAVES; i++) {
-    var prng = new MersenneTwister(SEED + i);
-    var noise = Noise(prng, Math.pow(PERSISTENCE, i) * VSCALE,
-                      wavelength, (WIDTH/wavelength)+1, linearInterpolate);
-    noises.push(noise);
-    wavelength = wavelength / 2;
-  }
+  var perlin = PerlinNoise(SEED, WIDTH, WAVELENGTH, PERSISTENCE, OCTAVES);
 
-  ctx.moveTo(0, HEIGHT-noisesAt(0));
+  ctx.moveTo(0, HEIGHT-perlin.at(0) * VSCALE);
   for (var x = 1; x < WIDTH; x++)
-    ctx.lineTo(x, HEIGHT-noisesAt(x));
+    ctx.lineTo(x, HEIGHT-perlin.at(x) * VSCALE);
 
   ctx.stroke();
 
