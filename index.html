@@ -58,7 +58,6 @@ canvas {
     </select>
   </fieldset>
 </form>
-<script src="vendor/three.js"></script>
 <script src="vendor/mersenne-twister.js"></script>
 <script src="perlin.js"></script>
 <script>
@@ -162,6 +161,23 @@ var renderers = {
     return canvas;
   },
   '3d': function render3d(options) {
+    if (!window.THREE)
+      return (function loadThreeJs() {
+        var div = document.createElement("div");
+        var throbber = document.createElement("img");
+        var script = document.createElement("script");
+
+        throbber.setAttribute("src", "vendor/ajax-loader.gif");
+        div.appendChild(throbber);
+        script.setAttribute("src", "vendor/three.js");
+        script.onload = function() {
+          div.removeChild(throbber);
+          div.appendChild(render3d(options));
+        };
+        document.body.appendChild(script);
+        return div;
+      })();
+
     var PERLIN_WIDTH = 200;
     var CANVAS_WIDTH = 400;
     var WAVELENGTH = PERLIN_WIDTH / 3;
