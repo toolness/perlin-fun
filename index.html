@@ -28,6 +28,7 @@ canvas {
     <select id="renderer">
       <option value="1d" selected>One-Dimensional</option>
       <option value="2d">Two-Dimensional</option>
+      <option value="3d">Three-Dimensional</option>
     </select>
 
     <label for="octaves">Octaves</label>
@@ -57,9 +58,37 @@ canvas {
     </select>
   </fieldset>
 </form>
+<script src="vendor/three.js"></script>
 <script src="vendor/mersenne-twister.js"></script>
 <script src="perlin.js"></script>
 <script>
+function dragDeltaControl(element, cb) {
+  var mouseDown = false;
+  var lastX;
+  var lastY;
+
+  element.onmouseup = function(e) {
+    mouseDown = false;
+  };
+
+  element.onmousedown = function(e) {
+    mouseDown = true;
+    lastX = e.screenX;
+    lastY = e.screenY;
+  };
+
+  element.onmousemove = function(e) {
+    if (!mouseDown) return;
+    var deltaX = e.screenX - lastX;
+    var deltaY = e.screenY - lastY;
+
+    lastX = e.screenX;
+    lastY = e.screenY;
+
+    cb(deltaX, deltaY);
+  };
+}
+
 var renderers = {
   '1d': function render1d(options) {
     var WIDTH = 640;
@@ -131,6 +160,76 @@ var renderers = {
     }
 
     return canvas;
+  },
+  '3d': function render3d(options) {
+    var PERLIN_WIDTH = 200;
+    var CANVAS_WIDTH = 400;
+    var WAVELENGTH = PERLIN_WIDTH / 3;
+    var SEGMENTS_HIGH = 50;
+    var SEGMENTS_LOW = 10;
+    var ZSCALE = 0.5;
+
+    var config = render3d.config || (function() {
+      var config = {
+        terrainRot: new THREE.Vector3(2.1, 3.15, 0),
+        terrainScale: new THREE.Vector3(3, 3, 3)
+      };
+
+      try {
+        new THREE.WebGLRenderer();
+        config.Renderer = THREE.WebGLRenderer;
+        config.terrainSegments = SEGMENTS_HIGH;
+      } catch (e) {
+        config.Renderer = THREE.CanvasRenderer;
+        config.terrainSegments = SEGMENTS_LOW;
+      }
+
+      render3d.config = config;
+      return config;
+    })();
+    var perlin = Perlin.LayeredNoise({
+      seed: options.seed,
+      width: PERLIN_WIDTH,
+      wavelength: WAVELENGTH,
+      persistence: options.persistence,
+      octaves: options.octaves,
+      interpolate: options.interpolate,
+      noise: Perlin.Noise2D
+    });
+    var renderer = new config.Renderer();
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(75, 1.0, 0.1, 1000);
+    var light = new THREE.PointLight(0xffffff);
+    var geometry = new THREE.ParametricGeometry(function(u, v) {
+      var z = perlin.at(u*(PERLIN_WIDTH-1), v*(PERLIN_WIDTH-1)) * ZSCALE;
+      return new THREE.Vector3(u-0.5, v-0.5, z)
+    }, config.terrainSegments, config.terrainSegments, true);
+    var material = new THREE.MeshLambertMaterial({color: 0xf0f0f0});
+    var terrain = new THREE.Mesh(geometry, material);
+
+    scene.add(terrain);
+    scene.add(light);
+    camera.position.z = 5;
+    renderer.setSize(CANVAS_WIDTH, CANVAS_WIDTH);
+    terrain.rotation.copy(render3d.config.terrainRot);
+    terrain.scale.copy(render3d.config.terrainScale);
+    render3d.config.terrainRot = terrain.rotation;
+    render3d.config.terrainScale = terrain.scale;
+    light.position.x = 10;
+    light.position.y = 50;
+    light.position.z = 130;
+
+    renderer.render(scene, camera);
+
+    dragDeltaControl(renderer.domElement, function(deltaX, deltaY) {
+      terrain.rotation.z += deltaX * 0.05;
+      terrain.scale.x += deltaY * 0.05;
+      terrain.scale.y += deltaY * 0.05;
+      terrain.scale.z += deltaY * 0.05;
+      renderer.render(scene, camera);      
+    });
+
+    return renderer.domElement;
   }
 };
 
