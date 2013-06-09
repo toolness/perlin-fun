@@ -217,7 +217,11 @@ var renderers = {
     var camera = new THREE.PerspectiveCamera(75, 1.0, 0.1, 1000);
     var light = new THREE.PointLight(0xffffff);
     var geometry = new THREE.ParametricGeometry(function(u, v) {
-      var z = perlin.at(u*(PERLIN_WIDTH-1), v*(PERLIN_WIDTH-1)) * ZSCALE;
+      var z;
+      if (u == 0 || u == 1 || v == 0 || v == 1)
+        z = 0;
+      else
+        z = perlin.at(u*(PERLIN_WIDTH-1), v*(PERLIN_WIDTH-1)) * ZSCALE;
       return new THREE.Vector3(u-0.5, v-0.5, z)
     }, config.terrainSegments, config.terrainSegments, true);
     var material = new THREE.MeshLambertMaterial({color: 0xf0f0f0});
