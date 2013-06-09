@@ -226,7 +226,7 @@ var renderers = {
     scene.add(terrain);
     scene.add(light);
     camera.position.z = 5;
-    renderer.setSize(CANVAS_WIDTH, CANVAS_WIDTH);
+    renderer.setSize(CANVAS_WIDTH, CANVAS_WIDTH, false);
     terrain.rotation.copy(render3d.config.terrainRot);
     terrain.scale.copy(render3d.config.terrainScale);
     render3d.config.terrainRot = terrain.rotation;
