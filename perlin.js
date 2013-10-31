@@ -24,7 +24,7 @@ var Perlin = (function(MersenneTwister) {
 
   function Noise1D(prng, amplitude, wavelength, waves, interpolate) {
     var self = {};
-    var points = [];
+    var points = self.points = [];
 
     for (var i = 0; i < waves; i++)
       points.push({
@@ -42,6 +42,21 @@ var Perlin = (function(MersenneTwister) {
     };
 
     return self;
+  }
+
+  function BoundedNoise1D(startY, endY) {
+    if (typeof(endY) == 'undefined') endY = startY;
+
+    function BNoise1D(prng, amplitude, wavelength, waves, interpolate) {
+      var self = Noise1D(prng, amplitude, wavelength, waves, interpolate);
+
+      self.points[0].y = startY * amplitude;
+      self.points[self.points.length-1].y = endY * amplitude;
+
+      return self;
+    }
+
+    return BNoise1D;
   }
 
   function Noise2D(prng, amplitude, wavelength, waves, interpolate) {
@@ -117,6 +132,7 @@ var Perlin = (function(MersenneTwister) {
   Perlin.linearInterpolate = linearInterpolate;
   Perlin.cosineInterpolate = cosineInterpolate;
   Perlin.Noise1D = Noise1D;
+  Perlin.BoundedNoise1D = BoundedNoise1D;
   Perlin.Noise2D = Noise2D;
   Perlin.LayeredNoise = LayeredNoise;
 
